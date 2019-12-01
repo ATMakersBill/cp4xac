@@ -42,6 +42,8 @@ echo 'USB_HID_DEVICES="XAC_COMPATIBLE_GAMEPAD"' >> py/circuitpy_mpconfig.mk
 export BUILD_VERBOSE=3
 make -C mpy-cross
 
+NUM_BOARDS_BUILT=0
+
 #do the atmel boards first
 cd ports/atmel-samd/
 
@@ -53,8 +55,8 @@ cd ports/atmel-samd/
 # Latest will be copied to atmakers-cp4xac-${BOARD}-${LANG}-LATEST.uf2
 for curboard in $ATMEL_BOARDS
 do
-    VERUF2="${SCRIPT_LOC}/atmakers-cp4xac-${curboard}-en_US-${LATEST_TAG}.uf2"
-    LATESTUF2="${SCRIPT_LOC}/atmakers-cp4xac-${curboard}-en_US-LATEST.uf2"
+    VERUF2="${SCRIPT_LOC}/cp4xac-${LATEST_TAG}-${curboard}-en_US.uf2"
+    LATESTUF2="${SCRIPT_LOC}/cp4xac-LATEST-${curboard}-en_US.uf2"
     if test -f ${VERUF2}; then
 	echo "Skipping ${VERUF2}"
 	continue
@@ -63,6 +65,7 @@ do
     make BOARD="$curboard" clean all
     cp -v "./build-${curboard}/firmware.uf2" ${VERUF2}
     cp -v ${VERUF2} ${LATESTUF2}
+    NUM_BOARDS_BUILT=$((NUM_BOARDS_BUILT+1))
 #    make BOARD="$curboard" clean
 done
 
@@ -72,8 +75,8 @@ cd ${CP_ROOT}/ports/nrf/
 
 for curboard in $NRF_BOARDS
 do
-    VERUF2="${SCRIPT_LOC}/atmakers-cp4xac-${curboard}-en_US-${LATEST_TAG}.uf2"
-    LATESTUF2="${SCRIPT_LOC}/atmakers-cp4xac-${curboard}-en_US-LATEST.uf2"
+    VERUF2="${SCRIPT_LOC}/cp4xac-${LATEST_TAG}-${curboard}-en_US.uf2"
+    LATESTUF2="${SCRIPT_LOC}/cp4xac-LATEST-${curboard}-en_US.uf2"
     if test -f ${VERUF2}; then
 	echo "Skipping ${VERUF2}"
 	continue
@@ -82,6 +85,15 @@ do
     make BOARD="$curboard" clean all
     cp -v "./build-${curboard}/firmware.uf2" ${VERUF2}
     cp -v ${VERUF2} ${LATESTUF2}
+    NUM_BOARDS_BUILT=$((NUM_BOARDS_BUILT+1))
 #    make BOARD="$curboard" clean
 done
 
+cd ${SCRIPT_LOC}
+echo "BUILT ${NUM_BOARDS_BUILT} Images"
+if [ "$NUM_BOARDS_BUILT" -gt "0" ]; then
+    git add -v *uf2
+    git tag -v "TESTING-${LATEST_TAG}"
+    git commit -v -m "Adding ${NUM_BOARDS_BUILT} Images with version ${LATEST_TAG}"
+    git push -v
+fi
