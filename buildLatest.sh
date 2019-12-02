@@ -38,6 +38,10 @@ git submodule update --init --recursive
 echo '#enable XAC Support (and no other HID)' >> py/circuitpy_mpconfig.mk
 echo 'USB_HID_DEVICES="XAC_COMPATIBLE_GAMEPAD"' >> py/circuitpy_mpconfig.mk
 
+#Copy the alternative gamepad file to be frozen
+cp -v ${SCRIPT_LOC}/lib/adafruit_hid/gamepad.py frozen/Adafruit_CircuitPython_HID/adafruit_hid/gamepad.py
+
+
 #mpy-cross is not board specific
 export BUILD_VERBOSE=3
 make -C mpy-cross
@@ -61,6 +65,8 @@ do
 	echo "Skipping ${VERUF2}"
 	continue
     fi
+    echo 'FROZEN_MPY_DIRS += $(TOP)/frozen/Adafruit_CircuitPython_HID' >> boards/${curboard}/mpconfigboard.mk
+
     echo "Building $curboard----------------------------------------------------------------"
     make BOARD="$curboard" clean all
     cp -v "./build-${curboard}/firmware.uf2" ${VERUF2}
@@ -81,6 +87,8 @@ do
 	echo "Skipping ${VERUF2}"
 	continue
     fi
+    echo 'FROZEN_MPY_DIRS += $(TOP)/frozen/Adafruit_CircuitPython_HID' >> boards/${curboard}/mpconfigboard.mk
+    
     echo "Building $curboard----------------------------------------------------------------"
     make BOARD="$curboard" clean all
     cp -v "./build-${curboard}/firmware.uf2" ${VERUF2}
@@ -91,7 +99,7 @@ done
 
 cd ${SCRIPT_LOC}
 echo "BUILT ${NUM_BOARDS_BUILT} Images"
-if [ "$NUM_BOARDS_BUILT" -gt "0" ]; then
+if [ "$NUM_BOARDS_BUILT" -gt "1000000" ]; then
     git add -v *uf2
     git tag -v "TESTING-${LATEST_TAG}"
     git commit -v -m "Adding ${NUM_BOARDS_BUILT} Images with version ${LATEST_TAG}"
